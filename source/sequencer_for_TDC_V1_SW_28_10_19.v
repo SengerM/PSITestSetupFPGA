@@ -1,8 +1,11 @@
-// sequencer.v
-
 `timescale 1ns/1ps
 
 module sequencer_for_TDC_V1_SW_28_10_19 (
+	//-------------------------------------------------------------------//
+	// This is the sequencer module to interface with the test structure //
+	// that I am calling "TDC_V1_SW_28_10_19" which is the one produced  //
+	// by S. Widerkehr that contains 4 TDC test structures.              //
+	//-------------------------------------------------------------------//
 	input clk,
 	input reset,
 
