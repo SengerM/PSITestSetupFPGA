@@ -88,11 +88,11 @@ module baseboard
 	output DIO44,  // 7.114
 	input  DIO45,  // 8.130
 	output DIO46,  // 7.118
-	input  DIO47,  // 8.127
+	output  DIO47,  // 8.127
 	output DIO48,  // 7.119
-	input  DIO49,  // 8.124
+	output  DIO49,  // 8.124
 	output DIO50,  // 8.120
-	input  DIO51   // 8.123
+	output  DIO51   // 8.123
 );
 	
 	// --- clock, reset -------------------------------------------
@@ -173,8 +173,8 @@ module baseboard
 	assign spi_d = data_mode ? readdata : {ready, spi_enable, 6'd2, 2'b_00, TEST_STRUCTURE_DOUT_internal};
 
 	// --- LEMO input/output --------------------------------------
-	//~ assign OUT1 = measuring;
-	//~ assign OUT2 = TEST_STRUCTURE_DOUT_internal[0];
+	assign OUT1 = write;
+	assign OUT2 = write;
 
 	// --- Command decoder ----------------------------------------
 	reg cmd_del;
@@ -306,50 +306,44 @@ module baseboard
 		if (!res_n)
 		begin
 			ADAPTER_BOARD_VOLTAGE_REGULATOR_ENABLE <= 1'b0;
-			ENA_US1     <= 1'b0;
-			ENA_US2     <= 1'b0;
+			ENA_US1 <= 1'b0;
+			ENA_US2 <= 1'b0;
 			DELAY_CHIPS_ENABLE <= 1'b0;
-			DELAY_CHIPS_D       <= 10'd0;
-			DELAY_CHIPS_LENA    <= 1'b0;
-			DELAY_CHIPS_LENB    <= 1'b0;
-			nRRES       <= 1'b0;
-			nPRES       <= 1'b0;
-			TEST_STRUCTURE_SEL         <= 3'd0;
-			PSTART      <= 1'b0;
-			PSTOP       <= 1'b0;
-			TEST_STRUCTURE_DOUT_internal    <= 6'd0;
+			DELAY_CHIPS_D <= 10'd0;
+			DELAY_CHIPS_LENA <= 1'b0;
+			DELAY_CHIPS_LENB <= 1'b0;
+			TEST_STRUCTURE_SEL <= 3'd0;
+			PSTART <= 1'b0;
+			PSTOP <= 1'b0;
+			TEST_STRUCTURE_DOUT_internal <= 6'd0;
 		end
 		else if (spi_enable)
 		begin
 			ADAPTER_BOARD_VOLTAGE_REGULATOR_ENABLE <= 1'b1;
-			ENA_US1     <= 1'b1;
-			ENA_US2     <= 1'b1;
+			ENA_US1 <= 1'b1;
+			ENA_US2 <= 1'b1;
 			DELAY_CHIPS_ENABLE <= 1'b0;
-			DELAY_CHIPS_D       <= DELAY_CHIPS_D_internal;
-			DELAY_CHIPS_LENA    <= DELAY_CHIPS_LENA_internal;
-			DELAY_CHIPS_LENB    <= DELAY_CHIPS_LENB_internal;
-			nRRES       <= nRRES_internal;
-			nPRES       <= nPRES_internal;
-			TEST_STRUCTURE_SEL         <= TEST_STRUCTURE_SEL_internal;
-			PSTART      <= !PSTART_internal;
-			PSTOP       <= !PSTOP_internal;
-			if (|TEST_STRUCTURE_SEL_internal) TEST_STRUCTURE_DOUT_internal <= DOUT;
+			DELAY_CHIPS_D <= DELAY_CHIPS_D_internal;
+			DELAY_CHIPS_LENA <= DELAY_CHIPS_LENA_internal;
+			DELAY_CHIPS_LENB <= DELAY_CHIPS_LENB_internal;
+			TEST_STRUCTURE_SEL <= TEST_STRUCTURE_SEL_internal;
+			PSTART <= !PSTART_internal;
+			PSTOP <= !PSTOP_internal;
+			if (|TEST_STRUCTURE_SEL_internal) TEST_STRUCTURE_DOUT_internal <= TEST_STRUCTURE_DOUT;
 		end		
 		else
 		begin
 			ADAPTER_BOARD_VOLTAGE_REGULATOR_ENABLE <= 1'b0;
-			ENA_US1     <= 1'b0;
-			ENA_US2     <= 1'b0;
+			ENA_US1 <= 1'b0;
+			ENA_US2 <= 1'b0;
 			DELAY_CHIPS_ENABLE <= 1'b0;
-			DELAY_CHIPS_D       <= 10'd0;
-			DELAY_CHIPS_LENA    <= 1'b0;
-			DELAY_CHIPS_LENB    <= 1'b0;
-			nRRES       <= 1'b0;
-			nPRES       <= 1'b0;
-			TEST_STRUCTURE_SEL         <= 3'd0;
-			PSTART      <= 1'b0;
-			PSTOP       <= 1'b0;
-			TEST_STRUCTURE_DOUT_internal    <= DOUT;
+			DELAY_CHIPS_D <= 10'd0;
+			DELAY_CHIPS_LENA <= 1'b0;
+			DELAY_CHIPS_LENB <= 1'b0;
+			TEST_STRUCTURE_SEL <= 3'd0;
+			PSTART <= 1'b0;
+			PSTOP <= 1'b0;
+			TEST_STRUCTURE_DOUT_internal <= TEST_STRUCTURE_DOUT;
 		end
 	end
 endmodule
