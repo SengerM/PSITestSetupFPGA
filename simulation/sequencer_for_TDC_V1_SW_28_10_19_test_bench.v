@@ -57,7 +57,7 @@ module sequencer_test_bench;
 		t_start_coarse = 8'd0;
 		t_stop_coarse = 8'd0;
 		DOUT = 7'b1111111;
-		SAFF = 21'd0;
+		SAFF = 21'b110101010101010101010;
 		
 		#(2*CLK_PERIOD);
 		
