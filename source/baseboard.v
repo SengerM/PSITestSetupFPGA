@@ -207,9 +207,9 @@ module baseboard
 			begin
 				cmd_del           <= spi_write && (spi_q[15:13] == 3'b001);
 				cmd_run_sequencer <= spi_write && (spi_q[15:13] == 3'b010);
-			   cmd_read_start    <= spi_write && (spi_q[15:12] == 4'b1100);
-			   cmd_read          <= spi_write && (spi_q[15:12] == 4'b1101);
-			   cmd_read_last     <= spi_write && (spi_q[15:12] == 4'b1110);
+				cmd_read_start    <= spi_write && (spi_q[15:12] == 4'b1100);
+				cmd_read          <= spi_write && (spi_q[15:12] == 4'b1101);
+				cmd_read_last     <= spi_write && (spi_q[15:12] == 4'b1110);
 				if (spi_write && (spi_q[15:11] == 5'b01100)) tstart <= spi_q[7:0];
 				if (spi_write && (spi_q[15:11] == 5'b01101)) tstop  <= spi_q[7:0];			
 			end
