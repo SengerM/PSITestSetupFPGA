@@ -122,10 +122,11 @@ module baseboard
 	assign DIO6 = ADAPTER_BOARD_VOLTAGE_REGULATOR_ENABLE;
 	assign DIO19 = DELAY_CHIPS_ENABLE;
 	assign {DIO1, DIO3, DIO9, DIO11, DIO13, DIO14, DIO15, DIO16, DIO17, DIO18} = DELAY_CHIPS_D;
-	assign DIO7  = DELAY_CHIPS_LENA;
-	assign DIO5  = DELAY_CHIPS_LENB;
+	assign DIO7 = DELAY_CHIPS_LENA;
+	assign DIO5 = DELAY_CHIPS_LENB;
 	assign {DIO47, DIO49, DIO51, DIO50} = TEST_STRUCTURE_SEL;
 	assign TEST_STRUCTURE_DOUT = {DIO48, DIO45, DIO43, DIO41, DIO39, DIO37, DIO35};
+	assign TEST_STRUCTURE_SAFF = {DIO20, DIO21, DIO22, DIO23, DIO24, DIO25, DIO26, DIO27, DIO28 DIO29, DIO30, DIO31, DIO32, DIO33, DIO34, DIO36, DIO38, DIO40, DIO42, DIO44, DIO46};
 	assign DIO12 = TEST_STRUCTURE_RES;
 	
 	// Internal signals ------------------------------------------------
@@ -207,9 +208,9 @@ module baseboard
 			begin
 				cmd_del           <= spi_write && (spi_q[15:13] == 3'b001);
 				cmd_run_sequencer <= spi_write && (spi_q[15:13] == 3'b010);
-			   cmd_read_start    <= spi_write && (spi_q[15:12] == 4'b1100);
-			   cmd_read          <= spi_write && (spi_q[15:12] == 4'b1101);
-			   cmd_read_last     <= spi_write && (spi_q[15:12] == 4'b1110);
+				cmd_read_start    <= spi_write && (spi_q[15:12] == 4'b1100);
+				cmd_read          <= spi_write && (spi_q[15:12] == 4'b1101);
+				cmd_read_last     <= spi_write && (spi_q[15:12] == 4'b1110);
 				if (spi_write && (spi_q[15:11] == 5'b01100)) tstart <= spi_q[7:0];
 				if (spi_write && (spi_q[15:11] == 5'b01101)) tstop  <= spi_q[7:0];			
 			end
