@@ -10,3 +10,7 @@ It is possible to simulate modules written in Verilog using [Icarus Verilog](htt
 sudo apt install iverilog
 sudo apt install gtkwave
 ```
+
+## How to use Terasic USB Blaster in Linux
+
+I was not able to make it work. Once I thought it was working but after I restarted the computer it stopped working. I give up with the Terasic USB Blaster.
