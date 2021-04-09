@@ -72,12 +72,14 @@ module sequencer_for_TDC_V1_SW_28_10_19 (
 					measure_flag <= 1'b1;
 					RES <= 0; // Remove the "reset" signal from the test structure.
 					current_state <= SM_MEASURE_SEQUENCE; end
-				SM_MEASURE_SEQUENCE: begin
-					if (current_state_time_count[7:0] == t_start_coarse) PSTART <= 1;
-					if (current_state_time_count[7:0] == t_stop_coarse) PSTOP <= 1; 
-					if (current_state_time_count[8]) begin // Finish the measure sequence.
-						current_state <= SM_READOUT_SEQUENCE;
-						measure_flag <= 1'b0; end/*if*/ end/*SM_MEASURE_SEQUENCE*/
+				SM_MEASURE_SEQUENCE: begin: measure_sequence
+					if (current_state_time_count[7:0] == t_start_coarse)
+						PSTART <= 1;
+					if (current_state_time_count[7:0] >= t_stop_coarse) begin
+						PSTOP <= 1;
+						if (current_state_time_count[7:0] == t_stop_coarse + 2) begin // Finish the measure sequence. I am waiting some time (i.e. t_stop_coarse + something) so any transient in the test structure finishes. The sime scale in the test structure is in the order of pico seconds so a few number of clock cycles here (order nano second) should be enough.
+							current_state <= SM_READOUT_SEQUENCE;
+							measure_flag <= 1'b0; end/*if*/ end end/*measure_sequence*/
 				SM_READOUT_SEQUENCE: begin: readout_mechanism
 					reg [2:0]write_counter; // This counter is used to write the many bytes from each TDC into the memory.
 					if (SEL == 4'b0000) begin
