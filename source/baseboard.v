@@ -134,7 +134,7 @@ module baseboard
 	wire DELAY_CHIPS_LENA_internal;
 	wire DELAY_CHIPS_LENB_internal;
 	wire [3:0]TEST_STRUCTURE_SEL_internal;
-	reg [5:0]TEST_STRUCTURE_DOUT_internal;
+	reg [6:0]TEST_STRUCTURE_DOUT_internal;
 	wire PSTART_internal;
 	wire PSTOP_internal;
 	wire ready;
