@@ -72,12 +72,14 @@ module sequencer_for_TDC_V1_SW_28_10_19 (
 					measure_flag <= 1'b1;
 					RES <= 0; // Remove the "reset" signal from the test structure.
 					current_state <= SM_MEASURE_SEQUENCE; end
-				SM_MEASURE_SEQUENCE: begin
-					if (current_state_time_count[7:0] == t_start_coarse) PSTART <= 1;
-					if (current_state_time_count[7:0] == t_stop_coarse) PSTOP <= 1; 
-					if (current_state_time_count[8]) begin // Finish the measure sequence.
-						current_state <= SM_READOUT_SEQUENCE;
-						measure_flag <= 1'b0; end/*if*/ end/*SM_MEASURE_SEQUENCE*/
+				SM_MEASURE_SEQUENCE: begin: measure_sequence
+					if (current_state_time_count[7:0] == t_start_coarse)
+						PSTART <= 1;
+					if (current_state_time_count[7:0] >= t_stop_coarse) begin
+						PSTOP <= 1;
+						if (current_state_time_count[7:0] == t_stop_coarse + 2) begin // Finish the measure sequence. I am waiting some time (i.e. t_stop_coarse + something) so any transient in the test structure finishes. The sime scale in the test structure is in the order of pico seconds so a few number of clock cycles here (order nano second) should be enough.
+							current_state <= SM_READOUT_SEQUENCE;
+							measure_flag <= 1'b0; end/*if*/ end end/*measure_sequence*/
 				SM_READOUT_SEQUENCE: begin: readout_mechanism
 					reg [2:0]write_counter; // This counter is used to write the many bytes from each TDC into the memory.
 					if (SEL == 4'b0000) begin
@@ -86,17 +88,18 @@ module sequencer_for_TDC_V1_SW_28_10_19 (
 					else begin
 						write_counter <= write_counter + 3'd1;
 						case (write_counter)
-							3'd0: begin
-								write <= 1'b1; // This will tell the RAM block in the base board to write the data.
-								data[15:0] <= {DOUT[6:0], 4'd0, SAFF[20:16]}; end // This will be written to the RAM in the base board module.
-							3'd1:
-								data[15:0] <= SAFF[15:0]; // This will be written to the RAM in teh base board module.
-							3'd2: begin
-								write <= 1'b0; // Tell the RAM to not write anymore.
+							0: data[15:0] <= {DOUT[6:0], 4'd0, SAFF[20:16]}; // This will be written to the memory in the base board module.
+							1: write <= 1'b1; // This will tell the memory block in the base board to write the data.
+							2: write <= 1'b0; // Disable writing.
+							3: data[15:0] <= SAFF[15:0]; // Select the remaining data.
+							4: write <= 1'b1; // Write to the memory.
+							5: write <= 1'b0;
+							6: begin
 								SEL <= {SEL<<1}; // Move to the next TDC structure.
 								write_counter <= 3'd0; // Reset the write counter so for the next TDC structure we repeat the cycle again.
 								if (SEL == 4'b1000) // If we are in the last test structure...
-									current_state <= SM_IDLE; end // When the last TDC was read, we have finished.
+									current_state <= SM_IDLE; // When the last TDC was read, we have finished.
+								end
 							endcase
 						end
 					end
