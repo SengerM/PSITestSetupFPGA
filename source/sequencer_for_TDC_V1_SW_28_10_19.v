@@ -81,20 +81,20 @@ module sequencer_for_TDC_V1_SW_28_10_19 (
 							current_state <= SM_READOUT_SEQUENCE;
 							measure_flag <= 1'b0; end/*if*/ end end/*measure_sequence*/
 				SM_READOUT_SEQUENCE: begin: readout_mechanism
-					reg [2:0]write_counter; // This counter is used to write the many bytes from each TDC into the memory.
+					reg [3:0]write_counter; // This counter is used to write the many bytes from each TDC into the memory.
 					if (SEL == 4'b0000) begin
 						SEL <= 4'b0001;
-						write_counter <= 3'b000; end
+						write_counter <= 4'd0; end
 					else begin
 						write_counter <= write_counter + 3'd1;
 						case (write_counter)
 							0: data[15:0] <= {DOUT[6:0], 4'd0, SAFF[20:16]}; // This will be written to the memory in the base board module.
-							1: write <= 1'b1; // This will tell the memory block in the base board to write the data.
-							2: write <= 1'b0; // Disable writing.
-							3: data[15:0] <= SAFF[15:0]; // Select the remaining data.
-							4: write <= 1'b1; // Write to the memory.
-							5: write <= 1'b0;
-							6: begin
+							10: write <= 1'b1; // This will tell the memory block in the base board to write the data.
+							11: write <= 1'b0; // Disable writing.
+							12: data[15:0] <= SAFF[15:0]; // Select the remaining data.
+							13: write <= 1'b1; // Write to the memory.
+							14: write <= 1'b0;
+							15: begin
 								SEL <= {SEL<<1}; // Move to the next TDC structure.
 								write_counter <= 3'd0; // Reset the write counter so for the next TDC structure we repeat the cycle again.
 								if (SEL == 4'b1000) // If we are in the last test structure...
