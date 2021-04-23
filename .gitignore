@@ -4,3 +4,5 @@
 !.gitignore
 !*.sh
 !*.md
+!*.qpf
+!*.qsf
