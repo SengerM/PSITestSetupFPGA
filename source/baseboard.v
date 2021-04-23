@@ -50,7 +50,7 @@ module baseboard
 	output DIO9,   // 5.78
 //	output DIO10,  // 4.64 N
 	output DIO11,  // 5.79
-	inout  DIO12,  // 4.62
+	output DIO12,  // 4.62
 	output DIO13,  // 4.61
 	output DIO14,  // 5.80
 	output DIO15,  // 5.81
@@ -61,38 +61,38 @@ module baseboard
 	
 	// Bank 6, 7; 1.2V
 	// Bank 8; 3.3V
-	inout  DIO20,  // 6.88
-	inout  DIO21,  // 6.89
-	inout  DIO22,  // 6.90
-	inout  DIO23,  // 6.91
-	inout  DIO24,  // 6.92
-	inout  DIO25,  // 6.93
-	inout  DIO26,  // 6.96
-	inout  DIO27,  // 6.97
-	inout  DIO28,  // 6.98
-	inout  DIO29,  // 6.99
-	inout  DIO30,  // 6.100
-	inout  DIO31,  // 6.101
-	inout  DIO32,  // 6.102
-	inout  DIO33,  // 6.105
-	inout  DIO34,  // 6.106
-	inout  DIO35,  // 8.141
+	input  DIO20,  // 6.88
+	input  DIO21,  // 6.89
+	input  DIO22,  // 6.90
+	input  DIO23,  // 6.91
+	input  DIO24,  // 6.92
+	input  DIO25,  // 6.93
+	input  DIO26,  // 6.96
+	input  DIO27,  // 6.97
+	input  DIO28,  // 6.98
+	input  DIO29,  // 6.99
+	input  DIO30,  // 6.100
+	input  DIO31,  // 6.101
+	input  DIO32,  // 6.102
+	input  DIO33,  // 6.105
+	input  DIO34,  // 6.106
+	input  DIO35,  // 8.141
 	inout  DIO36,  // 7.110
-	inout  DIO37,  // 8.140
+	input  DIO37,  // 8.140
 	inout  DIO38,  // 7.111
 	input  DIO39,  // 8.135
 	inout  DIO40,  // 7.112
 	input  DIO41,  // 8.132
 	inout  DIO42,  // 7.113
-	output DIO43,  // 8.131
-	output DIO44,  // 7.114
+	input  DIO43,  // 8.131
+	input  DIO44,  // 7.114
 	input  DIO45,  // 8.130
-	output DIO46,  // 7.118
-	output  DIO47,  // 8.127
-	output DIO48,  // 7.119
-	output  DIO49,  // 8.124
+	input  DIO46,  // 7.118
+	output DIO47,  // 8.127
+	input  DIO48,  // 7.119
+	output DIO49,  // 8.124
 	output DIO50,  // 8.120
-	output  DIO51   // 8.123
+	output DIO51   // 8.123
 );
 	
 	// --- clock, reset -------------------------------------------
