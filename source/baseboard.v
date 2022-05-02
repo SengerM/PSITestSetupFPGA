@@ -95,7 +95,6 @@ module baseboard
 	output DIO51   // 8.123
 );
 	
-	// --- clock, reset -------------------------------------------
 	wire clk;
 	wire res_n;
 	
@@ -105,41 +104,34 @@ module baseboard
 		.locked (res_n)
 	);
 	
-	//  Adapter board and delay chips signals --------------------------
-	reg ADAPTER_BOARD_VOLTAGE_REGULATOR_ENABLE; // 2.5 V regulator enable.
-	reg DELAY_CHIPS_ENABLE; // Enable pin of the delay chips.
-	reg [9:0]DELAY_CHIPS_D; // D input of the delay chips.
-	reg DELAY_CHIPS_LENA; // LEN input of the delay chip A.
-	reg DELAY_CHIPS_LENB; // LEN input of the delay chip B.
-	
-	// Signals of the test structure TDC_V1_SW_28_10_19 ----------------
-	reg [3:0]TEST_STRUCTURE_SEL; // TDC structure selection.
-	wire [6:0]TEST_STRUCTURE_DOUT; // TDC counter output.
-	wire [20:0]TEST_STRUCTURE_SAFF; // TDC inverters chain output.
-	reg TEST_STRUCTURE_RES; // Test structure reset.
 	
 	// Signals mapping with DIO (see KiCAD design) ---------------------
-	assign DIO6 = ADAPTER_BOARD_VOLTAGE_REGULATOR_ENABLE;
-	assign DIO19 = DELAY_CHIPS_ENABLE;
-	assign {DIO1, DIO3, DIO9, DIO11, DIO13, DIO14, DIO15, DIO16, DIO17, DIO18} = DELAY_CHIPS_D;
-	assign DIO7 = DELAY_CHIPS_LENA;
-	assign DIO5 = DELAY_CHIPS_LENB;
-	assign {DIO47, DIO49, DIO51, DIO50} = TEST_STRUCTURE_SEL;
-	assign TEST_STRUCTURE_DOUT = {DIO48, DIO45, DIO43, DIO41, DIO39, DIO37, DIO35};
-	assign TEST_STRUCTURE_SAFF = {DIO20, DIO21, DIO22, DIO23, DIO24, DIO25, DIO26, DIO27, DIO28, DIO29, DIO30, DIO31, DIO32, DIO33, DIO34, DIO36, DIO38, DIO40, DIO42, DIO44, DIO46};
-	assign DIO12 = TEST_STRUCTURE_RES;
+	reg [3:0]TEST_STRUCTURE_SEL;
+	reg TEST_STRUCTURE_AOUT_RESET;
+	reg TEST_STRUCTURE_RESET;
+	reg TEST_STRUCTURE_ENA;
+	reg TEST_STRUCTURE_BLOCK_RESET;
+	reg TEST_STRUCTURE_BLOCK_HOLD;
+	reg TEST_STRUCTURE_POLARITY;
+	reg pulse_generator_trigger;
+	assign {DIO23,DIO22,DIO21,DIO20} = TEST_STRUCTURE_SEL;
+	assign DIO27 = TEST_STRUCTURE_AOUT_RESET;
+	assign DIO26 = TEST_STRUCTURE_RESET;
+	assign DIO24 = TEST_STRUCTURE_ENA;
+	assign DIO25 = TEST_STRUCTURE_BLOCK_RESET;
+	assign DIO28 = TEST_STRUCTURE_BLOCK_HOLD;
+	assign DIO29 = TEST_STRUCTURE_POLARITY;
+	assign DIO34 = pulse_generator_trigger;
 	
-	// Internal signals ------------------------------------------------
-	wire [9:0]DELAY_CHIPS_D_internal;
-	wire DELAY_CHIPS_LENA_internal;
-	wire DELAY_CHIPS_LENB_internal;
-	wire [3:0]TEST_STRUCTURE_SEL_internal;
-	reg [6:0]TEST_STRUCTURE_DOUT_internal;
-	wire PSTART_internal;
-	wire PSTOP_internal;
-	wire ready;
-	wire measuring;
-
+	// Internal signals for the sequencer ------------------------------
+	reg [9:0]internal_RESET_release_time;
+	reg [9:0]internal_AOUT_RESET_release_time;
+	reg [9:0]internal_measure_time;
+	reg [3:0]internal_SEL;
+	reg internal_BLOCK_RESET;
+	reg internal_BLOCK_HOLD;
+	reg internal_POLARITY;
+	
 	// --- I2C ----------------------------------------------------
 	assign SCL = 1'bz; // Unused input.
 	assign SDA = 1'bz; // Unused input.
@@ -158,8 +150,7 @@ module baseboard
 	reg  [4:0]readaddr;
 	wire [15:0]readdata;
 	
-	spi16 raspi_spi
-	(
+	spi16 raspi_spi(
 		.clk(clk),
 		.res_n(res_n),
 		.nSS(SPI_CE0),
@@ -171,182 +162,79 @@ module baseboard
 		.dout(spi_q)
 	);
 
-	assign spi_d = data_mode ? readdata : {ready, spi_enable, 6'd2, 2'b_00, TEST_STRUCTURE_DOUT_internal};
+	assign spi_d = data_mode ? readdata : {ready, spi_enable, 6'd2, 8'd0};
 
 	// --- LEMO input/output --------------------------------------
-	assign OUT1 = write;
-	assign OUT2 = write;
+	assign OUT1 = clk;
+	assign OUT2 = clk;
 
-	// --- Command decoder ----------------------------------------
-	reg cmd_del;
-	reg cmd_run_sequencer;
-	reg cmd_ena;
-	reg cmd_read_start;
-	reg cmd_read;
-	reg cmd_read_last;
-
-	reg [7:0]tstart;
-	reg [7:0]tstop;
-
-	always @(posedge clk or negedge res_n)
-	begin
+	// Command decoder -------------------------------------------------
+	// Not an expert in SPI here, but what I see from the previous implementation
+	// of this is that we have our data (i.e. the command) in the `spi_q`
+	// wire. So here I define my format for the commands being
+	//     spi_q[15:0] = CCCCDDDDDDDDDDDD
+	// where `CCCC` is a code identifying which command it is and
+	// `DDD...` is data for such command.
+	localparam CMD_CODE_FOR_SETTING_SEL = 4'b0000;
+	localparam CMD_CODE_FOR_SETTING_BLOCK_RESET = 4'b0001;
+	localparam CMD_CODE_FOR_SETTING_BLOCK_HOLD = 4'b0010;
+	localparam CMD_CODE_FOR_SETTING_POLARITY = 4'b0011;
+	localparam CMD_CODE_FOR_SETTING_RESET_RELEASE_TIME = 4b'0100;
+	localparam CMD_CODE_FOR_SETTING_AOUT_RESET_RELEASE_TIME = 4'b0101;
+	localparam CMD_CODE_FOR_SETTING_MEASURE_TIME = 4'b0110;
+	localparam CMD_CODE_FOR_CMD_ENA = 4'b1001;
+	
+	reg cmd_enable_spi_commands;
+	
+	always @(posedge clk or negedge res_n) begin
 		if (!res_n)
-		begin
-			cmd_del <= 1'b0;
-			cmd_run_sequencer <= 1'd0;
-			cmd_ena <= 1'd0;
-			cmd_read_start <= 1'b0;
-			cmd_read <= 1'b0;
-			cmd_read_last <= 1'b0;
-			tstart  <= 8'd0;
-			tstop   <= 8'd0;
-		end
-		else
-		begin
-			cmd_ena <= spi_write && (spi_q[15:12] == 4'b1001);
-			if (spi_enable)
-			begin
-				cmd_del           <= spi_write && (spi_q[15:13] == 3'b001);
-				cmd_run_sequencer <= spi_write && (spi_q[15:13] == 3'b010);
-				cmd_read_start    <= spi_write && (spi_q[15:12] == 4'b1100);
-				cmd_read          <= spi_write && (spi_q[15:12] == 4'b1101);
-				cmd_read_last     <= spi_write && (spi_q[15:12] == 4'b1110);
-				if (spi_write && (spi_q[15:11] == 5'b01100)) tstart <= spi_q[7:0];
-				if (spi_write && (spi_q[15:11] == 5'b01101)) tstop  <= spi_q[7:0];			
+			cmd_enable_spi_commands <= 1'b0;
+		else begin
+			if (spi_write) begin
+				cmd_enable_spi_commands <= (spi_q[15:12] == CMD_CODE_FOR_CMD_ENA);
+				if (spi_enable) begin
+					case (spi_q[15:12])
+						CMD_CODE_FOR_SETTING_SEL: internal_SEL <= spi_q;
+						CMD_CODE_FOR_SETTING_BLOCK_RESET: internal_BLOCK_RESET <= spi_q;
+						CMD_CODE_FOR_SETTING_BLOCK_HOLD: internal_BLOCK_HOLD <= spi_q;
+						CMD_CODE_FOR_SETTING_POLARITY: internal_POLARITY <= spi_q;
+						CMD_CODE_FOR_SETTING_RESET_RELEASE_TIME: internal_RESET_release_time <= spi_q;
+						CMD_CODE_FOR_SETTING_AOUT_RESET_RELEASE_TIME: internal_AOUT_RESET_release_time <= spi_q;
+						CMD_CODE_FOR_SETTING_MEASURE_TIME: internal_measure_time <= spi_q;
+						endcase
+					end
+				end
 			end
 		end
-	end	
-
-	// --- SPI enable
-	always @(posedge clk or negedge res_n)
-	begin
+	
+	always @(posedge clk or negedge res_n) begin // Enable or disable SPI commands
 		if (!res_n) spi_enable <= 1'd0;
-		else if (cmd_ena && (spi_q[7:1] == 7'b1001000)) spi_enable <= spi_q[0];
-	end
-
-	// --- Read Data
-	always @(posedge clk or negedge res_n)
-	begin
-		if (!res_n)
-		begin
-			data_mode <= 1'b0;
-			readaddr <= 5'd0;
+		else if (cmd_enable_spi_commands) 
+			spi_enable <= spi_q[0];
 		end
-		else
-		begin
-			if (cmd_read_start)
-			begin
-				data_mode <= 1'b1;
-				readaddr <= 5'd0;
-			end
-			else if (cmd_read)
-			begin
-				readaddr <= readaddr + 5'd1;
-			end
-			else if (cmd_read_last || cmd_ena)
-			begin
-				data_mode <= 1'b0;
-			end
-		end
-	end
-
-	// --- Write Data
-	always @(posedge clk or negedge res_n)
-	begin
-		if (!res_n) writeaddr <= 5'd0;
-		else
-		begin
-			if (measuring) writeaddr <= 5'd0;
-			else if (write) writeaddr <= writeaddr + 5'd1;
-		end
-	end
-
-	datamem RAM
-	(
-		.clock(clk),
-		.data(writedata),
-		.rdaddress(readaddr),
-		.wraddress(writeaddr),
-		.wren(write),
-		.q(readdata)
-	);
-
-	delay del
-	(
+	
+	sequencer_for_PIX_V1_SW_28_10_19 DUT (
 		.clk(clk),
-		.res_n(res_n),
-		.set(cmd_del),
-		.sel(spi_q[12]),
-		.d(spi_q[9:0]),
-		.lena(DELAY_CHIPS_LENA_internal),
-		.lenb(DELAY_CHIPS_LENB_internal),
-		.delay(DELAY_CHIPS_D_internal)
+		.reset(1'b0),
+		.run_sequencer(pulse_generator_trigger), // Setting this to 1 starts the sequencer.
+		.RESET_release_time(internal_RESET_release_time), // After this time since the `run_sequencer` signal, the `_RESET` is released.
+		.AOUT_RESET_release_time(internal_AOUT_RESET_release_time), // After this time since the `run_sequencer` signal, the `AOUT_RESET` is released.
+		.measure_time(internal_measure_time), // After this time since the `run_sequencer` signal, the state machine goes out of the "measure" state.
+		.SEL_input(internal_SEL), // When the `run_sequencer` signal arrives, this value will be applied to the `SEL` output.
+		.BLOCK_RESET_input(internal_BLOCK_RESET), // When the `run_sequencer` signal arrives, this value will be applied to the `BLOCK_RESET` output.
+		.BLOCK_HOLD_input(internal_BLOCK_HOLD), // When the `run_sequencer` signal arrives, this value will be applied to the `BLOCK_HOLD` output.
+		.POLARITY_input(internal_POLARITY), // When the `run_sequencer` signal arrives, this value will be applied to the `POLARITY` output.
+		.ready_flag(ready_flag), // 1 means that the sequencer is ready to start a new run, 0 means it is not.
+		.measure_flag(measure_flag),
+		.SEL(TEST_STRUCTURE_SEL),
+		.ENA(TEST_STRUCTURE_ENA),
+		.BLOCK_RESET(TEST_STRUCTURE_BLOCK_RESET),
+		._RESET(TEST_STRUCTURE_RESET),
+		.AOUT_RESET(TEST_STRUCTURE_AOUT_RESET),
+		.BLOCK_HOLD(TEST_STRUCTURE_BLOCK_HOLD),
+		.POLARITY(TEST_STRUCTURE_POLARITY)
 	);
 
-	sequencer_for_TDC_V1_SW_28_10_19 sequencer
-	(
-		.clk(clk),
-		.reset(!res_n),
-		.run_sequencer(cmd_run_sequencer),
-		.t_start_coarse(tstart),
-		.t_stop_coarse(tstop),
-		.ready_flag(ready),
-		.measure_flag(measuring),
-		.SEL(TEST_STRUCTURE_SEL_internal),
-		.PSTART(PSTART_internal),
-		.PSTOP(PSTOP_internal),
-		.RES(TEST_STRUCTURE_RES),
-		.DOUT(TEST_STRUCTURE_DOUT_internal),
-		.SAFF(TEST_STRUCTURE_SAFF),
-		.write(write),
-		.data(writedata)
-	);
-
-	always @(posedge clk or negedge res_n)
-	begin
-		if (!res_n)
-		begin
-			ADAPTER_BOARD_VOLTAGE_REGULATOR_ENABLE <= 1'b0;
-			ENA_US1 <= 1'b0;
-			ENA_US2 <= 1'b0;
-			DELAY_CHIPS_ENABLE <= 1'b0;
-			DELAY_CHIPS_D <= 10'd0;
-			DELAY_CHIPS_LENA <= 1'b0;
-			DELAY_CHIPS_LENB <= 1'b0;
-			TEST_STRUCTURE_SEL <= 3'd0;
-			PSTART <= 1'b0;
-			PSTOP <= 1'b0;
-			TEST_STRUCTURE_DOUT_internal <= 6'd0;
-		end
-		else if (spi_enable)
-		begin
-			ADAPTER_BOARD_VOLTAGE_REGULATOR_ENABLE <= 1'b1;
-			ENA_US1 <= 1'b1;
-			ENA_US2 <= 1'b1;
-			DELAY_CHIPS_ENABLE <= 1'b0;
-			DELAY_CHIPS_D <= DELAY_CHIPS_D_internal;
-			DELAY_CHIPS_LENA <= DELAY_CHIPS_LENA_internal;
-			DELAY_CHIPS_LENB <= DELAY_CHIPS_LENB_internal;
-			TEST_STRUCTURE_SEL <= TEST_STRUCTURE_SEL_internal;
-			PSTART <= !PSTART_internal;
-			PSTOP <= !PSTOP_internal;
-			if (|TEST_STRUCTURE_SEL_internal) TEST_STRUCTURE_DOUT_internal <= TEST_STRUCTURE_DOUT;
-		end		
-		else
-		begin
-			ADAPTER_BOARD_VOLTAGE_REGULATOR_ENABLE <= 1'b0;
-			ENA_US1 <= 1'b0;
-			ENA_US2 <= 1'b0;
-			DELAY_CHIPS_ENABLE <= 1'b0;
-			DELAY_CHIPS_D <= 10'd0;
-			DELAY_CHIPS_LENA <= 1'b0;
-			DELAY_CHIPS_LENB <= 1'b0;
-			TEST_STRUCTURE_SEL <= 3'd0;
-			PSTART <= 1'b0;
-			PSTOP <= 1'b0;
-			TEST_STRUCTURE_DOUT_internal <= TEST_STRUCTURE_DOUT;
-		end
-	end
-endmodule
+	endmodule
 
 	
