@@ -6,3 +6,9 @@
 !*.md
 !*.qpf
 !*.qsf
+*.qdf
+*.bak
+source/db
+source/incremental_db
+source/output_files
+source/simulation
