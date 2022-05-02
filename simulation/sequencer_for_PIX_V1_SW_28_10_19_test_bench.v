@@ -25,7 +25,7 @@ module sequencer_test_bench;
 	reg [9:0]AOUT_RESET_release_time; // After this time since the `run_sequencer` signal, the `AOUT_RESET` is released.
 	reg [9:0]measure_time; // After this time since the `run_sequencer` signal, the state machine goes out of the "measure" state.
 	reg [3:0]SEL_input; // When the `run_sequencer` signal arrives, this value will be applied to the `SEL` output.
-	reg BLOCK_RES_input; // When the `run_sequencer` signal arrives, this value will be applied to the `BLOCK_RES` output.
+	reg BLOCK_RESET_input; // When the `run_sequencer` signal arrives, this value will be applied to the `BLOCK_RESET` output.
 	reg BLOCK_HOLD_input; // When the `run_sequencer` signal arrives, this value will be applied to the `BLOCK_HOLD` output.
 	reg POLARITY_input; // When the `run_sequencer` signal arrives, this value will be applied to the `POLARITY` output.
 
@@ -35,7 +35,7 @@ module sequencer_test_bench;
 	// PIX_V1_SW_28_10_19 test structure ---//
 	wire [3:0]SEL;
 	wire ENA;
-	wire BLOCK_RES;
+	wire BLOCK_RESET;
 	wire _RESET;
 	wire AOUT_RESET;
 	wire BLOCK_HOLD;
@@ -50,14 +50,14 @@ module sequencer_test_bench;
 		.AOUT_RESET_release_time(AOUT_RESET_release_time), // After this time since the `run_sequencer` signal, the `AOUT_RESET` is released.
 		.measure_time(measure_time), // After this time since the `run_sequencer` signal, the state machine goes out of the "measure" state.
 		.SEL_input(SEL_input), // When the `run_sequencer` signal arrives, this value will be applied to the `SEL` output.
-		.BLOCK_RES_input(BLOCK_RES_input), // When the `run_sequencer` signal arrives, this value will be applied to the `BLOCK_RES` output.
+		.BLOCK_RESET_input(BLOCK_RESET_input), // When the `run_sequencer` signal arrives, this value will be applied to the `BLOCK_RESET` output.
 		.BLOCK_HOLD_input(BLOCK_HOLD_input), // When the `run_sequencer` signal arrives, this value will be applied to the `BLOCK_HOLD` output.
 		.POLARITY_input(POLARITY_input), // When the `run_sequencer` signal arrives, this value will be applied to the `POLARITY` output.
 		.ready_flag(ready_flag), // 1 means that the sequencer is ready to start a new run, 0 means it is not.
 		.measure_flag(measure_flag),
 		.SEL(SEL),
 		.ENA(ENA),
-		.BLOCK_RES(BLOCK_RES),
+		.BLOCK_RESET(BLOCK_RESET),
 		._RESET(_RESET),
 		.AOUT_RESET(AOUT_RESET),
 		.BLOCK_HOLD(BLOCK_HOLD),
@@ -68,7 +68,7 @@ module sequencer_test_bench;
 		reset = 1;
 		run_sequencer = 0;
 		SEL_input = 4'd3;
-		BLOCK_RES_input = 1'b0;
+		BLOCK_RESET_input = 1'b0;
 		BLOCK_HOLD_input = 1'b0;
 		POLARITY_input = 1'b0;
 		RESET_release_time = 10'd5;

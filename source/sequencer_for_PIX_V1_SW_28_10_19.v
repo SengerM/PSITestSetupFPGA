@@ -14,7 +14,7 @@ module sequencer_for_PIX_V1_SW_28_10_19 (
 	input [9:0]AOUT_RESET_release_time, // After this time since the `run_sequencer` signal, the `AOUT_RESET` is released.
 	input [9:0]measure_time, // After this time since the `run_sequencer` signal, the state machine goes out of the "measure" state.
 	input [3:0]SEL_input, // When the `run_sequencer` signal arrives, this value will be applied to the `SEL` output.
-	input BLOCK_RES_input, // When the `run_sequencer` signal arrives, this value will be applied to the `BLOCK_RES` output.
+	input BLOCK_RESET_input, // When the `run_sequencer` signal arrives, this value will be applied to the `BLOCK_RESET` output.
 	input BLOCK_HOLD_input, // When the `run_sequencer` signal arrives, this value will be applied to the `BLOCK_HOLD` output.
 	input POLARITY_input, // When the `run_sequencer` signal arrives, this value will be applied to the `POLARITY` output.
 
@@ -24,7 +24,7 @@ module sequencer_for_PIX_V1_SW_28_10_19 (
 	// PIX_V1_SW_28_10_19 test structure ---//
 	output reg [3:0]SEL,                    //
 	output reg ENA,                         //
-	output reg BLOCK_RES,                   //
+	output reg BLOCK_RESET,                   //
 	output reg _RESET,                      //
 	output reg AOUT_RESET,                  //
 	output reg BLOCK_HOLD,                  //
@@ -63,7 +63,7 @@ module sequencer_for_PIX_V1_SW_28_10_19 (
 			case (current_state) // State machine machinery ---
 				SM_INITIALIZE: begin // Things to do before the system is ready to trigger.
 					SEL <= SEL_input;
-					BLOCK_RES <= BLOCK_RES_input;
+					BLOCK_RESET <= BLOCK_RESET_input;
 					BLOCK_HOLD <= BLOCK_HOLD_input;
 					POLARITY <= POLARITY_input;
 					ENA <= 1'b1;
