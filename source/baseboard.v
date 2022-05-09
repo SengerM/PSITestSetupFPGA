@@ -101,6 +101,9 @@ module baseboard(
 		.locked (res_n)
 	);
 	
+	// --- LEMO input/output --------------------------------------
+	assign OUT1 = pulse_generator_trigger_has_arrived;
+	assign OUT2 = run_sequencer;
 	
 	// Signals mapping with DIO (see KiCAD design) ---------------------
 	wire [3:0]TEST_STRUCTURE_SEL;
@@ -128,6 +131,8 @@ module baseboard(
 	reg internal_BLOCK_RESET;
 	reg internal_BLOCK_HOLD;
 	reg internal_POLARITY;
+	wire run_sequencer;
+	assign run_sequencer = time_since_last_trigger_arrived==10'd36;
 	
 	// --- I2C ----------------------------------------------------
 	assign SCL = 1'bz; // Unused input.
@@ -160,11 +165,7 @@ module baseboard(
 	);
 
 	assign spi_d = 16'd0;
-
-	// --- LEMO input/output --------------------------------------
-	assign OUT1 = clk;
-	assign OUT2 = clk;
-
+	
 	// Command decoder -------------------------------------------------
 	// Not an expert in SPI here, but what I see from the previous implementation
 	// of this is that we have our data (i.e. the command) in the `spi_q`
@@ -211,10 +212,26 @@ module baseboard(
 			spi_enable <= spi_q[0];
 		end
 	
+	// -----------------------------------------------------------------
+	reg pulse_generator_trigger_has_arrived;
+	reg [9:0]time_since_last_trigger_arrived;
+	always @(posedge clk) begin
+		if (!pulse_generator_trigger)
+			pulse_generator_trigger_has_arrived <= 1'b1;
+		if (pulse_generator_trigger_has_arrived) begin
+			time_since_last_trigger_arrived <= time_since_last_trigger_arrived + 9'd1;
+			if (time_since_last_trigger_arrived == 9'd99)
+				pulse_generator_trigger_has_arrived <= 1'b0;
+			end
+		else
+			time_since_last_trigger_arrived <= 9'd0;
+		end
+	// -----------------------------------------------------------------
+	
 	sequencer_for_PIX_V1_SW_28_10_19 DUT (
 		.clk(clk),
 		.reset(1'b0),
-		.run_sequencer(pulse_generator_trigger), // Setting this to 1 starts the sequencer.
+		.run_sequencer(run_sequencer), // Setting this to 1 starts the sequencer.
 		.RESET_release_time(internal_RESET_release_time), // After this time since the `run_sequencer` signal, the `_RESET` is released.
 		.AOUT_RESET_release_time(internal_AOUT_RESET_release_time), // After this time since the `run_sequencer` signal, the `AOUT_RESET` is released.
 		.measure_time(internal_measure_time), // After this time since the `run_sequencer` signal, the state machine goes out of the "measure" state.
