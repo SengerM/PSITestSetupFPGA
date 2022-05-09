@@ -3,8 +3,7 @@
 `timescale 1ns/1ps
 
 
-module baseboard
-(
+module baseboard(
 	// --- 10 MHz Clock inputs ------------------------------------
 	input CLOCK1, // 2.26
 	input CLOCK2, // 2.27
@@ -185,6 +184,7 @@ module baseboard
 	reg cmd_enable_spi_commands;
 	
 	always @(posedge clk or negedge res_n) begin
+		ENA_US1 <= 1; // Enable the voltage regulator.
 		if (!res_n)
 			cmd_enable_spi_commands <= 1'b0;
 		else begin
@@ -232,7 +232,7 @@ module baseboard
 		.BLOCK_HOLD(TEST_STRUCTURE_BLOCK_HOLD),
 		.POLARITY(TEST_STRUCTURE_POLARITY)
 	);
-
+	
 	endmodule
 
 	
