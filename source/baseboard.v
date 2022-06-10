@@ -2,7 +2,6 @@
 
 `timescale 1ns/1ps
 
-
 module baseboard(
 	// --- 10 MHz Clock inputs ------------------------------------
 	input CLOCK1, // 2.26
@@ -37,7 +36,7 @@ module baseboard(
 	// --- Digital IO signals
 	// Bank 4, 5; 3.3V
 	inout DIO1,   // 5.74
-	inout  DIO2,   // 4.70 P
+	inout DIO2,   // 4.70 P
 	input DIO3,   // 5.75
 	input DIO4,   // 4.69 N
 	input DIO5,   // 5.76
@@ -102,8 +101,8 @@ module baseboard(
 	);
 	
 	// --- LEMO input/output --------------------------------------
-	assign OUT1 = pulse_generator_trigger_has_arrived;
-	assign OUT2 = run_sequencer;
+	assign OUT1 = clk;
+	assign OUT2 = 1'b0;
 	
 	// Signals mapping with DIO (see KiCAD design) ---------------------
 	wire [3:0]TEST_STRUCTURE_SEL;
@@ -173,13 +172,13 @@ module baseboard(
 	//     spi_q[15:0] = CCCCDDDDDDDDDDDD
 	// where `CCCC` is a code identifying which command it is and
 	// `DDD...` is data for such command.
-	localparam CMD_CODE_FOR_SETTING_SEL = 4'b0000;
 	localparam CMD_CODE_FOR_SETTING_BLOCK_RESET = 4'b0001;
 	localparam CMD_CODE_FOR_SETTING_BLOCK_HOLD = 4'b0010;
 	localparam CMD_CODE_FOR_SETTING_POLARITY = 4'b0011;
 	localparam CMD_CODE_FOR_SETTING_RESET_RELEASE_TIME = 4'b0100;
 	localparam CMD_CODE_FOR_SETTING_AOUT_RESET_RELEASE_TIME = 4'b0101;
 	localparam CMD_CODE_FOR_SETTING_MEASURE_TIME = 4'b0110;
+	localparam CMD_CODE_FOR_SETTING_SEL = 4'b0111;
 	localparam CMD_CODE_FOR_CMD_ENA = 4'b1001;
 	
 	reg cmd_enable_spi_commands;
